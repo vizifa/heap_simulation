@@ -23,14 +23,6 @@ typedef struct free_list_tag{
 	Node* size[MAX];
 }FL;
 
-//print data of node
-void print(Node* ptr){
-	printf("\nName: %s", ptr->name);
-	printf("\nSize: %d", ptr->size);
-	printf("\nAddress: %s\n", ptr->address);
-	printf("\nExtra Bit: %d\n", ptr->extra_bit);
-}
-
 //create block for free list with add and size
 Node* create_node_fl(char* add, int size){
 	Node* ptr = (Node*)malloc(sizeof(Node));
@@ -38,18 +30,6 @@ Node* create_node_fl(char* add, int size){
 	ptr->extra_bit = -1;
 	ptr->size = size;
 	ptr->name = NULL;
-	ptr->next = NULL;
-	
-	return ptr;
-}
-
-//creeate node for allocated list with existing node and name
-Node* create_node_al(Node* head, char* name){
-	Node* ptr = (Node*)malloc(sizeof(Node));
-	ptr->address = head->address;
-	ptr->extra_bit = 1;
-	ptr->name = name;
-	ptr->size = head->size;
 	ptr->next = NULL;
 	
 	return ptr;
@@ -66,13 +46,36 @@ void initialize(AL* allctd_list, FL* free_list){
 	printf("Initialisation completed\n");
 }
 
-/*the steps to allocate:
-find nearest size
-find free block 
-remove free block from fl
-add block to al
+//print data of node
+void print(Node* ptr){
+	printf("\nName: %s", ptr->name);
+	printf("\nSize: %d", ptr->size);
+	printf("\nAddress: %s", ptr->address);
+	printf("\nExtra Bit: %d\n", ptr->extra_bit);
+}
+
+/*Algorithm to allocate:
+	-find nearest size(power of 2)
+	-find free block of this size
+	-remove free block from free list
+	-add block to allocated list
 */
 
+//creeate block for allocated list with existing node from free list and name
+Node* create_node_al(Node* head, char* name){
+	Node* ptr = (Node*)malloc(sizeof(Node));
+	ptr->address = head->address;
+	ptr->extra_bit = 1;
+	ptr->name = name;
+	ptr->size = head->size;
+	ptr->next = NULL;
+	
+	free(head);
+	
+	return ptr;
+}
+
+//convert hex address to decimal
 int convert_to_decimal(char* hex){
 	int i=0, decimal = 0;
 	while(hex[i] != '\0'){
@@ -88,6 +91,7 @@ int convert_to_decimal(char* hex){
 	return decimal;
 }
 
+//convert decimal address to hex
 char* convert_to_hex(int num){
 	long q, r, j=0;
     char* hex = malloc(ADD_LEN*sizeof(char));
@@ -115,13 +119,13 @@ char* next_address(char* add, int size){
 	return next;
 }
 
-//nearest 2s power
+//nearest power of 2
 int find_nearest_power(int size){
 	int p = ceil(log2(size));
 	return p;
 }
 
-//remove node from free list
+//remove block from free list
 void remove_node_fl(Node* ptr, Node* prev, FL* free_list){
 	int block_size = find_nearest_power(ptr->size);
 	if(prev == NULL){
@@ -165,6 +169,7 @@ Node* find_free_block(int size, FL* free_list){
 			return_node = ptr;
 			remove_node_fl(ptr, prev, free_list);
 		}
+		
 		//else find free block of size*2 and split
 		else{
 			Node* nptr = find_free_block(size*2, free_list);
@@ -179,7 +184,7 @@ Node* find_free_block(int size, FL* free_list){
 	return return_node;
 }
 
-//add a blockto allocated list
+//add a block to allocated list
 void add_node_al(Node* nptr, AL* allctd_list){
 	Node* ptr = allctd_list->lptr;
 	if(ptr == NULL){
@@ -345,6 +350,7 @@ void deallocate(char* name, AL* allctd_list, FL* free_list){
 	}
 }
 
+//main malloc function
 void Malloc(AL* allctd_list, FL* free_list){
 	printf("Enter Name: ");
 	char* name = (char*)malloc(NAME_LEN*sizeof(char));
@@ -355,6 +361,7 @@ void Malloc(AL* allctd_list, FL* free_list){
 	allocate(size, name, allctd_list, free_list);	
 }
 
+//main free function
 void Free(AL* allctd_list, FL* free_list){
 	printf("Enter Name: ");
 	char* name = (char*)malloc(NAME_LEN*sizeof(char));
@@ -363,6 +370,7 @@ void Free(AL* allctd_list, FL* free_list){
 	deallocate(name, allctd_list, free_list);	
 }
 
+//display allocated list
 void view_al(AL* allctd_list){
 	Node* ptr = allctd_list->lptr;
 	if(ptr == NULL){
@@ -383,6 +391,7 @@ void view_al(AL* allctd_list){
 	}
 }
 
+//display free list
 void view_fl(FL* free_list){
 	int flag = 0, i;
 	for(i=0; i<MAX; i++){
@@ -400,6 +409,7 @@ void view_fl(FL* free_list){
 	}
 }
 
+//display one node
 void display_node(AL* allctd_list){
 	printf("Enter Name: ");
 	char* name = (char*)malloc(NAME_LEN*sizeof(char));
@@ -428,6 +438,7 @@ void display_node(AL* allctd_list){
 	free(name);
 }
 
+//create memory that cannot be referenced 
 void create_garbage(char* name, AL* allctd_list, FL* free_list){
 	Node* prev = NULL;
 	int exists = has_node(&prev, allctd_list, name);
@@ -453,6 +464,7 @@ void create_garbage(char* name, AL* allctd_list, FL* free_list){
 	}
 }
 
+//main delete without deallocation function
 void Delete(AL* allctd_list, FL* free_list){
 	printf("Enter Name: ");
 	char* name = (char*)malloc(NAME_LEN*sizeof(char));
@@ -461,6 +473,7 @@ void Delete(AL* allctd_list, FL* free_list){
 	create_garbage(name, allctd_list, free_list);	
 }
 
+//garbage collector using referece counting method
 void gc(AL* allctd_list, FL* free_list){
 	Node* ptr = allctd_list->lptr;
 	Node* prev = NULL;
@@ -485,6 +498,7 @@ int main(){
 	char menu; 
 	int end = 0;
 	
+	//menu driven program
 	while(end == 0){
 		printf("\nEnter:\n1 to allocate memory\n2 to deallocate memory\n3 to view free list\n4 to view allocated list\n5 to view node\n6 to delete memory without deallocating\n7 to run garbage collector\nAny other key to exit.\n");
 		scanf("%c%*c", &menu);
