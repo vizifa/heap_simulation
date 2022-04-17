@@ -1,2 +1,2 @@
-# heap_simulation
-Simulating heap and garbage collector in c
+# Heap Simulation
+Simulating heap and garbage collector in C
